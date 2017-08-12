@@ -1,0 +1,63 @@
+########################################
+# Hoberg <florian@hoberg.ch>
+# Template FreeBSD packetfilter / pf config
+#######################################
+
+# Interfaces
+uplink          = "em0"
+internal        = "em1"
+mgmt            = "em2"
+
+# trusted systems
+mgmt_hosts       = "{ 82.82.82.82 110.110.110.110 24.24.24.0/28 }"
+monitoring_hosts = "{ 10.10.1.10 10.10.10.1.11 192.168.2.0/29}"
+infra_hosts      = "{ 10.2.0.1/24 192.168.0.0/24}"
+
+# own references
+public01v4      = { 42.42.42.42 }
+public02v6      = { 2001:aa8:ffe::12}
+publicall       = { $public01v4, $public01v6 }
+internalv4      = { 10.10.30.1 }
+internalv6      = {}
+internalall     = { $internv4, $internalv6 }
+
+# Defaults
+scrub on $uplink reassemble tcp no-df random-id
+set block-policy drop
+set skip on lo0
+block in all
+# disable next line to not filter outgoing traffic
+block out all
+
+# IPv6 
+# allow only types 133-137 for:
+# Neighbor Discovery Protocol (NDP), Router Solicitation (RS), Router Advertisement (RA)
+# Neighbor Solicitation (NS), Neighbor Advertisement (NA)
+pass inet6 proto ipv6-icmp icmp6-type { 128, 133, 134, 135, 136, 137 } keep state
+ 
+# ICMP
+# if you want to enable icmp enable this line
+#pass { inet, inet6 } proto icmp from any to any
+
+# Defaults
+## FreeBSD Mirror
+pass out quick on $uplink inet  proto tcp from any                   to      213.138.116.73                 port 80 keep state
+pass out quick on $uplink inet6 proto tcp from any                   to      2001:41c8:112:8300::50:1       port 80 keep state
+## Resolver
+pass out quick on em0 inet  proto tcp from any                       to      8.8.8.8                        port 53 keep state
+pass out quick on em0 inet  proto udp from any                       to      8.8.8.8                        port 53
+
+# Default policy for mgmt, monitoring 
+pass in quick on $mgmt inet  proto tcp from $mgmt_hosts              to     $internalall                    port 22 keep state
+pass in quick on $internal inet  from $monitoring_hosts              to     any
+pass on quick on $internal inet6 from $monitoring_hosts              to     any
+
+##################################################################################################################################
+##################################################################################################################################
+
+# External services
+# Web
+pass in quick on $uplink inet  proto tcp from any                    to      $public01v4                    port 80  keep state
+pass in quick on $uplink inet6 proto tcp from any                    to      $public01v6                    port 80  keep state
+pass in quick on $uplink inet  proto tcp from any                    to      $public01v4                    port 443 keep state
+pass in quick on $uplink inet6 proto tcp from any                    to      $public01v6                    port 443 keep state
