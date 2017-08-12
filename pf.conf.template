@@ -8,7 +8,7 @@ uplink          = "em0"
 internal        = "em1"
 mgmt            = "em2"
 
-# trusted systems
+# trusted systems (just dummy IPs; maybe single or in CIDR)
 mgmt_hosts       = "{ 82.82.82.82 110.110.110.110 24.24.24.0/28 }"
 monitoring_hosts = "{ 10.10.1.10 10.10.10.1.11 192.168.2.0/29}"
 infra_hosts      = "{ 10.2.0.1/24 192.168.0.0/24}"
